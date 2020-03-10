@@ -9,7 +9,7 @@
 int main(int argc, char * argv[]) {
     int f1, f2;
 
-    if (argc < 2) {
+    if (argc < 3) {
         write(STDOUT_FILENO, "You didn't specify the right arguments!\n", 43);
         exit(1);
     }
@@ -22,22 +22,19 @@ int main(int argc, char * argv[]) {
         exit(2);
     }
 
-    if (argc == 3) {
-        f2 = open(argv[2], O_WRONLY | O_CREAT | O_EXCL, 0644);
-        if (f2 == -1) {
-            write(STDOUT_FILENO, "Error opening file ", 19);
-            write(STDOUT_FILENO, argv[2], strlen(argv[2]));
-            write(STDOUT_FILENO, "\n", 1);
-            close(f1);
-            exit(3);
-        }
-        dup2(f2, STDOUT_FILENO);
+    f2 = open(argv[2], O_WRONLY | O_CREAT | O_EXCL, 0644);
+    if (f2 == -1) {
+        write(STDOUT_FILENO, "Error opening file ", 19);
+        write(STDOUT_FILENO, argv[2], strlen(argv[2]));
+        write(STDOUT_FILENO, "\n", 1);
+        close(f1);
+        exit(3);
     }
 
     char buffer[BUFFER_SIZE]; int nr, nw;
 
     while ((nr = read(f1, buffer, BUFFER_SIZE)) > 0) {
-        if ((nw = write(STDOUT_FILENO, buffer, nr)) <= 0 || nw != nr) {
+        if ((nw = write(f2, buffer, nr)) <= 0 || nw != nr) {
             perror(argv[2]);
             close(f1);
             exit(4);

@@ -7,7 +7,7 @@
 #define BUFFER_SIZE 512
 
 int main(int argc, char * argv[]) {
-    int f1;
+    int f1, f2;
 
     if (argc < 2) {
         write(STDOUT_FILENO, "You didn't specify the right arguments!\n", 43);
@@ -22,6 +22,18 @@ int main(int argc, char * argv[]) {
         exit(2);
     }
 
+    if (argc == 3) {
+        f2 = open(argv[2], O_WRONLY | O_CREAT | O_EXCL, 0644);
+        if (f2 == -1) {
+            write(STDOUT_FILENO, "Error opening file ", 19);
+            write(STDOUT_FILENO, argv[2], strlen(argv[2]));
+            write(STDOUT_FILENO, "\n", 1);
+            close(f1);
+            exit(3);
+        }
+        dup2(f2, STDOUT_FILENO);
+    }
+
     char buffer[BUFFER_SIZE]; int nr, nw;
 
     while ((nr = read(f1, buffer, BUFFER_SIZE)) > 0) {
@@ -33,6 +45,7 @@ int main(int argc, char * argv[]) {
     }
 
     close(f1);
+    close(f2);
 
     exit(0);
 }
