@@ -36,6 +36,7 @@ int main(int argc, char ** argv) {
                     close(pipefd2[WRITE]);
 
                     dup2(pipefd2[READ], STDIN_FILENO);
+                    close(pipefd2[READ]);
 
                     execlp("sort", "sort", NULL);
 
@@ -48,6 +49,7 @@ int main(int argc, char ** argv) {
                     // parent2
                     close(pipefd2[READ]);
                     dup2(pipefd2[WRITE], STDOUT_FILENO);
+                    close(pipefd2[WRITE]);
 
                     execlp("grep", "grep", argv[2], NULL);
 
@@ -61,8 +63,8 @@ int main(int argc, char ** argv) {
         default:
             // parent1
             close(pipefd1[READ]);
-
             dup2(pipefd1[WRITE], STDOUT_FILENO);
+            close(pipefd1[WRITE]);
 
             execlp("ls", "ls", argv[1], "-laR", NULL);
 
