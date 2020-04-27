@@ -28,6 +28,7 @@ int main() {
 
     for (int i = 0; i < NUM_THREADS; i++) {
         printf("%d\n", *thread_ret[i]);
+        free(thread_ret[i]);
     }
 
     pthread_exit(EXIT_SUCCESS);
