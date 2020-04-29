@@ -15,8 +15,6 @@
 int npos;
 sem_t * mut; int pos=0, val=0; void * buf;  // variaveis partilhadas
 
-
-
 int fill(/*void *nr*/) {
     int c = 0;
     while (1) {
@@ -62,7 +60,7 @@ int main(int argc, char *argv[]) {
 
 
     int shmFD = shm_open("shm", O_CREAT | O_RDWR, 0600);
-    ftruncate(shmFD, sizeof(int)*(npos+2) + sizeof(sem_t));
+    ftruncate(shmFD, memory_map_size);
 
     char * shm = mmap(0, memory_map_size, PROT_READ | PROT_WRITE, MAP_SHARED, shmFD, 0);
     buf = shm;
@@ -83,6 +81,7 @@ int main(int argc, char *argv[]) {
             fifoFD = open("total", O_WRONLY | O_NONBLOCK);
             printf("process %d counted %d\n", getpid(), n);
             write(fifoFD, &n, sizeof(int));
+            close(fifoFD);
             return 0;
         }
     }
@@ -95,6 +94,7 @@ int main(int argc, char *argv[]) {
         total += n;
     }
     printf("Total is %d\n", total);
+    
     close(fifoFD);
     unlink("total");
 
