@@ -1,1 +1,0 @@
-$ENV{'TEXINPUTS'}='../..:' . $ENV{'TEXINPUTS'}; 
