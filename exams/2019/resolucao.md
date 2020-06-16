@@ -226,7 +226,7 @@ A thread bloqueia à espera do acesso à variável partilhada turn. No entanto, 
 #include <stdlib.h>
 #include <pthread.h>
 
-
+mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int numThreads;
 int firstTurn = 0; // The first thread to run must have thrIndex=turn=0
 pthread_t * threadConds;
@@ -234,11 +234,13 @@ pthread_t * threadConds;
 void * thr(void *arg)
 {
     int thrIndex = *(int*)arg; // The effective indexes are 0,1,2,...
+    pthread_mutex_lock(&mutex);
     pthread_cond_wait(&threadConds[thrIndex]);
 
     printf("%d ", thrIndex + 1); // The numbers shown are 1,2,3,...
 
     pthread_cond_signal(&threadConds[(thrIndex+1)%numThreads]);
+    pthread_mutex_unlock(&mutex);
     return NULL;
 }
 
