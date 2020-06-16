@@ -60,7 +60,7 @@ Uma secção crítica não é uma secção de código que tem de ser executada i
 
 #### 2
 
-Garante-se que certo código é executado numa secção crítica adquirinto uma mutex, e apenas libertando a mutex após o código ser executado. Se o código não for executado, mas a mutex for adquirida, então a mutex não será libertada.
+Garante-se que certo código é executado numa secção crítica adquirinto uma mutex, e apenas libertando a mutex após o código ser executado. Se o código não for executado, mas a mutex for adquirida, então a mutex não será libertada. O mesmo serve para outras implementações de estruturas de sincronização de processos.
 
 ## c
 
@@ -68,7 +68,7 @@ A prevenção de espera circular é uma das 4 condições necessárias e suficie
 
 # Exercício 3
 
-Os processos penalizados, geralmente são os que têm bursts de CPU muito longos (CPU-bound). Os algoritmos de escalonamento dão prioridade aos processos que utilizam mais IO, quer seja para melhorar a fluidez do sistema perante o utilizador ou para realizar os acessos a memória, lentos por natureza, o mais rapidamente possível.
+Os processos penalizados, geralmente, são os que têm bursts de CPU muito longos (CPU-bound). Os algoritmos de escalonamento dão prioridade aos processos que utilizam mais IO, quer seja para melhorar a fluidez do sistema perante o utilizador ou para realizar os acessos a memória, lentos por natureza, o mais rapidamente possível.
 
 
 # Exercício 4
