@@ -61,12 +61,203 @@ Quando esse intervalo é excedido, é alocada uma nova página (se não houver p
 
 # Exercício 4
 
+## a
+
+O inode de um ficheiro contém a metadata do ficheiro (autor, ultima data de modificação, etc), assim como um índice de blocos, que contém as referências para a memória onde o conteúdo do ficheiro se localiza. Como este índice tem um tamanho variável, também o ficheiro terá um tamanho variavel. No entanto, o que acontece, para melhorar a performance ao pesquisar por um bloco específico (comparativamente à pesquisa sequencial) ou para reduzir o espaço ocupado por uma dada tabela em memória, as referências dessa tabela ao invés de se desreferenciarem para um bloco, podem referenciar por si outra tabela, construindo assim uma árvore de tabelas de indices, melhorando a busca por um bloco específico (logarítmica vs linear).
+
+## b
+
+Um potencial problema é, no acesso sequencial a ficheiros muito grandes, ter de desreferenciar uma quantidade muito grande de referências para aceder a cada um dos blocos (devido à utilização de tabelas de índice em vários níveis).
 
 # Exercício 5
 
+```
+(...)
+#define MAX_STRING 512
+
+#define READ 0
+#define WRITE 1
+
+int main(int argc, char * argv [])  {
+    if (argc != 2) {
+        return 1;
+    }
+
+    char * outFilename = argv[1];
+    int outFd = open(outFilename, O_CREAT|O_WRONLY|O_WRITE);
+
+    int in[2], out[2];
+    if (pipe(in) == -1) return 1;
+    if (pipe(out) == -1) return 1;
+
+    int pid = fork();
+
+    if (pid == -1) return 1;
+    else if (pid == 0) { // child
+        close(in[WRITE]);
+        close(out[READ]);
+        dup2(in[READ], STDIN_FILENO);
+        dup2(out[WRITE], STDOUT_FILENO);
+        execlp("bc", "bc", "-qi", NULL);
+        return 1;
+    }
+
+    // parent
+    close(in[READ]);
+    close(out[WRITE]);
+
+    size_t n;
+
+    char* line = NULL;
+    close(in[READ]);
+    close(out[WRITE]);
+    FILE* f1 = fdopen(in[WRITE], "w");
+    FILE* f2 = fdopen(out[READ], "r");
+
+    while(getline(&line, &n, stdin) != -1){
+        fprintf(f1, "%s", line);
+        fflush(f1);
+        getline(&line, &n, f2);
+        line[strlen(line)-1] = '\0';
+        write(outFd, line, strlen(line));
+        write(outFd, " = ", 3);
+        getline(&line, &n, f2);
+        write(outFd, line, strlen(line));
+    }
+
+    free(line);
+    close(outFd);
+    return 0;
+}
+```
 
 # Exercício 6
 
+## a
+
+Quem deve criar a fifo é o processo leitor (server-client). A responsabilidade é do processo leitor porque o propósito da informação escrita na fifo é esta ser lida pelo processo leitor, logo será este quem deve ter o controlo de quando começa e termina essa leitura. Os processos escritores apenas têm a responsabilidade de escrever mensagens no canal providenciado pelo leitor.
+
+## b
+
+`mkfifo(/users/tmp/srvfifo, 0000);`
+
+## c
+
+A escrita na FIFO é uma operação atómica, logo é impossível que um escritor sobreponha a sua mensagem à de outro. Porém, na leitura, se ambos os leitores começarem a ler exatamente ao mesmo tempo, é possível que ambos leiam a mesma mensagem, mas muito improvável. Para garantir que isso não acontece pode-se utilizar um mecanismo de exclusão mútua, por exemplo uma mutex.
+
+## d
+
+#### 1
+
+Para isso ser conseguido, o servidor pode dar unlink da fifo no momento em que quer fechar o FIFO para escrita, mas deixar o file descriptor aberto. Assim, poderá ler os restantes pedidos que já se encontravam na fila de espera, mas os clientes não conseguirão escrever mais pedidos.
+
+```
+(...)
+
+readRequests(); // ler os pedidos recebidos na fifo
+
+unlink(srvfifo); // os escritores não conseguem escrever mais para a fifo
+
+readRequests(); // ler os pedidos pendentes na queue
+
+close(fifofd);  // fechar a fifo para leitura (fecho final)
+
+(...)
+
+```
+
+
+#### 2
+
+Se o fifo for aberto com O_NONBLOCK, o leitor vê que o fifo está vazio pois a chamada read() retorna -1, e o errno fica com o valor EAGAIN. 
+```
+(...)
+
+int n = read(fifofd, msg, msglen);
+if (n == -1 && errno == EAGAIN) {
+    // fifo está vazia
+} else {
+    (...)
+} 
+
+(...)
+
+```
+Se o fifo for aberto sem O_NONBLOCK, quando o fifo fica vazio, mas está aberto em algum processo para escrita, o processo bloqueia na chamada read, à espera que seja algo escrito para o fifo. Se todos os processos escritores fecharam a fifo do seu lado, então a chamada read retorna 0 (eof).
+
+```
+(...)
+
+int n = read(fifofd, msg, msglen); // bloqueia à espera que seja escrito algo no fifo (se já tiver conteúdo não bloqueia)
+if (n == 0) { // eof
+    // fifo está vazia
+} else {
+    (...)
+} 
+
+(...)
+
+```
+
+#### 3
+
+O escritor sabe que não será possível escrever no FIFO pois a chamada write retornará erro (-1). Se se quiser saber se não será possível escrever na FIFO sem se tentar escrever, poder-se-á implementar uma região de memória partilhada onde se partilha o estado da fifo, ou um protocolo de cliente-servidor no qual o servidor notifica os clientes quando a fifo deixa de estar disponível.
+
 
 # Exercício 7
+
+## a
+
+Se em vez da array se utilizasse uma única variável, quando a thread que recebe essa variável a fosse ler não haveria garantias de que a variável já teria ou não sido alterada para o valor da próxima thread no loop. Assim, com a utilização da array, garante-se a persistência do valor passado à thread por tempo suficiente para ser lido sem a possibilidade de se ler o valor errado.
+
+## b
+
+Terminaria o processo (todas as threads). pthread_exit(NULL) termina apenas a thread principal, e as outras threads continuam a correr.
+
+## c
+
+A thread bloqueia à espera do acesso à variável partilhada turn. No entanto, no acesso à variável turn para determinar se é a vez da thread, a thread faz espera ativa pela sua vez. Isto é, está sempre a verificar se turn é igual ao seu index.
+
+## d
+
+```
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+
+int numThreads;
+int firstTurn = 0; // The first thread to run must have thrIndex=turn=0
+pthread_t * threadConds;
+
+void * thr(void *arg)
+{
+    int thrIndex = *(int*)arg; // The effective indexes are 0,1,2,...
+    pthread_cond_wait(&threadConds[thrIndex]);
+
+    printf("%d ", thrIndex + 1); // The numbers shown are 1,2,3,...
+
+    pthread_cond_signal(&threadConds[(thrIndex+1)%numThreads]);
+    return NULL;
+}
+
+int main()
+{
+    printf("Number of threads ? "); scanf("%d", &numThreads);
+    int *arg = (int *) malloc(sizeof(int)*numThreads);
+    pthread_t *tid = (pthread_t *) malloc(sizeof(pthread_t)*numThreads);
+
+    threadConds = (pthread_cond_t *) calloc(numThreads, sizeof(pthread_cond_t));
+    pthread_cond_signal(threadConds[firstTurn]);
+
+    for (int i = 0; i < numThreads; i++)
+    {
+        arg[i] = i;
+        pthread_create(&tid[i], NULL, thr, (void*)&arg[i]);
+    }
+    pthread_exit(NULL);
+}
+
+```
 
