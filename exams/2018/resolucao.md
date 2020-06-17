@@ -88,8 +88,260 @@ A relação entre o nome de um ficheiro e o bloco de dados que o compõe (inode)
     `(nomeFicheiro, enderecoINode)`
 Isto permite que várias entradas de vários diretórios, apesar de possuírem nomes diferentes, se refiram ao mesmo ficheiro.
 
+
 # 6
+
+```
+(...)
+#define MAX_STRING 512
+
+char destination_dir[MAX_STRING];
+char filename[MAX_STRING];
+
+int process_dir(char *dirname)
+{
+    DIR *dir;
+    struct dirent *entry;
+    struct stat statbuf;
+
+    chdir(dirname);
+
+    if (!(dir = opendir(dirname))) return 1;
+    while ((entry = readdir(dir)) != NULL) {
+        char path[1024];
+
+        // ‐‐‐ BLOCO A ‐‐‐
+        stat(entry->d_name, & statbuf);
+        if (S_ISDIR(statbuf.st_mode)) { // se 'entry' for um diretório
+            if (strcmp(entry‐>d_name, ".") == 0 || strcm(entry‐>d_name, "..") == 0)
+                continue;
+            int n = fork();
+            if (n == -1) return 1;
+            else if (n == 0) {
+                process_dir(entry->d_name);
+                exit(0);
+            }
+            waitpid(n, null, 0);
+        }
+        // ‐‐‐ FIM DO BLOCO A ‐‐‐
+
+        // ‐‐‐ BLOCO B ‐‐‐
+        else if (S_ISREG(statbuf.st_mode)) { // se 'entry' for um ficheiro regular
+            if (strstr(entry‐>d_name, filename) != NULL) { // se o nome do ficheiro contiver filename
+                int n = fork();
+                if (n == -1) return 1;
+                else if (n == 0) {
+                    execlp("cp", "cp", entry->d_name, destination_dir);
+                    exit(1);
+                }
+                waitpid(n, null, 0);
+            }
+        }
+        // ‐‐‐ FIM DO BLOCO B ‐‐‐
+    }
+    return 0;
+}
+
+int main(int argc, char * argv[]) {
+    // 1
+    if (argc != 4) {
+        exit(1);
+    }
+
+    // 2
+    strcpy(filename, argv[2]);
+    strcpy(destination_dir, argv[3]);
+
+    // 3
+    struct sigaction action;
+    action.sa_handler = SIG_IGN;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    sigaction(SIGINT, SIG_IGN, NULL);
+
+    // 4
+    process_dir(argv[1]);
+
+    exit(0);
+}
+```
+
+## b
+Se a instrução tivesse sido omitida, tanto o diretório . (o diretório atual) como o diretório .. (o diretório pai) seriam processados, o que não é desejável.
 
 # 7
 
+## a
+ ```
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
+#define READ 0
+#define WRITE 1
+
+int main(int argc, char * argv[]) {
+    if (argc != 2) return 1;
+
+    int fd[2];
+
+    if (pipe(fd) != 0) return 1;
+
+    int n = fork();
+
+    if (n == -1) return 1;
+    else if (n == 0) {
+        close(fd[WRITE]);
+        dup2(fd[READ], STDIN_FILENO);
+        execlp("compress", "compress", NULL);
+        exit(1);
+    }
+
+    close(fd[READ]);
+
+    int fileFd = open(argv[1], O_RDONLY);
+    full_copy(fileFd, fd[WRITE]);
+
+    exit(0);
+}
+```
+
+## b
+
+Não faz muito sentido pois acaba tendo 2 instâncias de compressF a ler da mesma FIFO, faria mais sentido caso o compressF fosse executado separadamente dos myprogF (tipo servidor).
+```
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
+#define MAX_STRING 512
+
+int main(int argc, char * argv[]) {
+    if (argc != 2) return 1;
+
+    int reqFd;
+
+    if (reqFd = open("requests", O_WRONLY) == -1) { // Caso o fifo ainda não tenha sido criado
+        return 1;
+    }
+
+    struct Request req;
+
+    createRequest(argv[1], &req);
+
+    char * fifoName = malloc(sizeof(char)*MAX_STRING);
+    sprintf(fifoName, "ans%ld", (long) getpid());
+
+    int n = fork();
+
+    if (n == -1) return 1;
+    else if (n == 0) {
+        execlp("compressF", "compressF", NULL);
+        exit(1);
+    }
+
+    if (mkfifo(fifoName, 0660) != 0) return 1;
+    write(reqFd, &req, sizeof(req));
+
+    int ansFd = open(fifoName, O_RDONLY);
+
+    struct Reply reply;
+    read(ansFd, &reply, sizeof(reply));
+    
+    write(STDOUT_FILENO, reply.data, sizeof(reply.data));
+
+    unlink(fifoName);
+
+    return 0;
+}
+
+```
+
+## c
+
+Uma mensagem transmitida por pipes com mais do que PIPE_BUF (definido em limits.h) bytes, não é garantidamente atómica, pois como o seu tamanho excede o tamanho máximo do pipe, poderá ser intercalada com outras mensagens e assim comprometida.
+
 # 8
+
+## a
+
+```
+#define NB 10
+int food_bits = 0;
+
+// (...)
+
+int main() {
+    pthread_t tid_bird, tid_baby[NB];
+    int args[NB];
+
+    pthread_sem_init(&sem1, 0, 1);
+    pthread_sem_init(&sem2, 0, 0);
+
+    pthread_create(&tid_bird, NULL, bird, NULL);
+    for (int i = 0; i < NB; i++) {
+        args[i] = i;
+        pthread_create(&tid_baby[i], NULL, baby, &args[i]);
+    }
+    return 0;
+}
+```
+
+## b & c 
+
+```
+int finish = 0;
+sem_t sem1, sem2;
+
+// (...)
+
+void *bird(void *arg) {
+    while (finish == 0) {
+        sem_wait(&sem1);
+
+        get_food();
+        food_bits = F;
+
+        sem_post(&sem2);
+    }
+    return NULL;
+}
+
+void *baby(void *arg) {
+    int id = *(int *)arg;
+    int n_bits = 0;
+    while (finish == 0) {
+        sem_wait(&sem2);
+        if (food_bits == 0) {
+            sem_post(&sem1);
+            fprintf(stderr, “I am baby %d, I have already eaten %d bits of food and I am still hungry!”, id, n_bits);
+            thread_cond_signal(&cond);
+        } else {
+            food_bits--;
+            sem_post(sem2);
+            n_bits++;
+        }
+    }
+    return NULL;
+}
+
+```
+
+## d
+
+```
+int * res = malloc(sizeof(int));
+pthread_exit((void *)res);
+```
+---
+```
+for (int i = 0; i < NB; i++) {
+    args[i] = i;
+    int * v;
+    pthread_join(tid_baby[i], (void) &v);
+    fprintf(stdout, “Baby number %d has eaten %d bits of food”, i, *v)
+}
+```
+
