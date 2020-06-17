@@ -221,12 +221,6 @@ Não faz muito sentido pois acaba tendo 2 instâncias de compressF a ler da mesm
 int main(int argc, char * argv[]) {
     if (argc != 2) return 1;
 
-    int reqFd;
-
-    if (reqFd = open("requests", O_WRONLY) == -1) { // Caso o fifo ainda não tenha sido criado
-        return 1;
-    }
-
     struct Request req;
 
     createRequest(argv[1], &req);
@@ -242,7 +236,14 @@ int main(int argc, char * argv[]) {
         exit(1);
     }
 
+    int reqFd;
+
     if (mkfifo(fifoName, 0660) != 0) return 1;
+
+    while (reqFd = open("requests", O_WRONLY) == -1) { // Caso o fifo ainda não tenha sido criado
+        sleep(1);
+    }
+
     write(reqFd, &req, sizeof(req));
 
     int ansFd = open(fifoName, O_RDONLY);
@@ -250,7 +251,7 @@ int main(int argc, char * argv[]) {
     struct Reply reply;
     read(ansFd, &reply, sizeof(reply));
     
-    write(STDOUT_FILENO, reply.data, sizeof(reply.data));
+    write(STDOUT_FILENO, reply.data, strlen(reply.data));
 
     unlink(fifoName);
 
