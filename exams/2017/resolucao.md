@@ -75,9 +75,9 @@ página 2, offset 125
 
 ## b
 
-A ocorrência de thrashing pode ser detetada se todos, ou quase todos, os acessos a memória resultam em page fault.
+A ocorrência de thrashing pode ser detetada se todos, ou quase todos, os acessos a memória resultam em page fault. (se o processo demorar mais tempo a aceder a memória do que a executar)
 
-O thrashing pode ser parado alocando mais páginas ao processo.
+O thrashing pode ser parado alocando mais páginas ao processo. (páginas essas que poderão ter de ser libertadas de outro processo, fazendo swap out)
 
 ## c
 
