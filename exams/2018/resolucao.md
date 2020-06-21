@@ -9,7 +9,7 @@ A multiprogramação baseia-se em "IO bursts" e "CPU bursts", ou seja, um proces
 
 
 **Thread principal**
-```
+```c
 (...)
 
 // variáveis globais
@@ -28,7 +28,7 @@ init(sem2, 0);
 
 **T1**
 
-```
+```c
 (...)
 
 wait(sem1);
@@ -41,7 +41,7 @@ signal(sem2);
 
 **T2**
 
-```
+```c
 (...)
 
 wait(sem2);
@@ -91,7 +91,7 @@ Isto permite que várias entradas de vários diretórios, apesar de possuírem n
 
 # 6
 
-```
+```c
 (...)
 #define MAX_STRING 512
 
@@ -172,7 +172,7 @@ Se a instrução tivesse sido omitida, tanto o diretório . (o diretório atual)
 # 7
 
 ## a
- ```
+ ```c
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -210,7 +210,7 @@ int main(int argc, char * argv[]) {
 ## b
 
 Não faz muito sentido pois acaba tendo 2 instâncias de compressF a ler da mesma FIFO, faria mais sentido caso o compressF fosse executado separadamente dos myprogF (tipo servidor).
-```
+```c
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -268,7 +268,7 @@ Uma mensagem transmitida por pipes com mais do que PIPE_BUF (definido em limits.
 
 ## a
 
-```
+```c
 #define NB 10
 int food_bits = 0;
 
@@ -292,7 +292,7 @@ int main() {
 
 ## b & c 
 
-```
+```c
 int finish = 0;
 sem_t sem1, sem2;
 
@@ -332,12 +332,12 @@ void *baby(void *arg) {
 
 ## d
 
-```
+```c
 int * res = malloc(sizeof(int));
 pthread_exit((void *)res);
 ```
 ---
-```
+```c
 for (int i = 0; i < NB; i++) {
     args[i] = i;
     int * v;

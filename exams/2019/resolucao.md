@@ -71,7 +71,7 @@ Um potencial problema é, no acesso sequencial a ficheiros muito grandes, ter de
 
 # Exercício 5
 
-```
+```c
 (...)
 #define MAX_STRING 512
 
@@ -139,7 +139,9 @@ Quem deve criar a fifo é o processo leitor (server-client). A responsabilidade 
 
 ## b
 
-`mkfifo(/users/tmp/srvfifo, 0000);`
+```c
+mkfifo(/users/tmp/srvfifo, 0000);
+```
 
 ## c
 
@@ -151,7 +153,7 @@ A escrita na FIFO é uma operação atómica, logo é impossível que um escrito
 
 Para isso ser conseguido, o servidor pode dar unlink da fifo no momento em que quer fechar o FIFO para escrita, mas deixar o file descriptor aberto. Assim, poderá ler os restantes pedidos que já se encontravam na fila de espera, mas os clientes não conseguirão escrever mais pedidos.
 
-```
+```c
 (...)
 
 readRequests(); // ler os pedidos recebidos na fifo
@@ -170,7 +172,7 @@ close(fifofd);  // fechar a fifo para leitura (fecho final)
 #### 2
 
 Se o fifo for aberto com O_NONBLOCK, o leitor vê que o fifo está vazio pois a chamada read() retorna -1, e o errno fica com o valor EAGAIN. 
-```
+```c
 (...)
 
 int n = read(fifofd, msg, msglen);
@@ -185,7 +187,7 @@ if (n == -1 && errno == EAGAIN) {
 ```
 Se o fifo for aberto sem O_NONBLOCK, quando o fifo fica vazio, mas está aberto em algum processo para escrita, o processo bloqueia na chamada read, à espera que seja algo escrito para o fifo. Se todos os processos escritores fecharam a fifo do seu lado, então a chamada read retorna 0 (eof).
 
-```
+```c
 (...)
 
 int n = read(fifofd, msg, msglen); // bloqueia à espera que seja escrito algo no fifo (se já tiver conteúdo não bloqueia)
@@ -220,7 +222,7 @@ A thread bloqueia à espera do acesso à variável partilhada turn. No entanto, 
 
 ## d
 
-```
+```c
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>

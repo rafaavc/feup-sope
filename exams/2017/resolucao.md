@@ -12,14 +12,14 @@
 Os semáforos devem ser inicializados em memória partilhada, em modo partilhado.
 
 **Inicialização**
-```
+```c
 init(sem1, 0); // P1 chega a A
 init(sem2, 0); // P2 chega a B
 init(sem3, 0); // P3 chega a C
 ```
 
 **P1**
-```
+```c
 // A
 signal(sem1);
 signal(sem1);
@@ -28,7 +28,7 @@ wait(sem3);
 ```
 
 **P2**
-```
+```c
 // B
 signal(sem2);
 signal(sem2);
@@ -37,7 +37,7 @@ wait(sem3);
 ```
 
 **P3**
-```
+```c
 // C
 signal(sem3);
 signal(sem3);
@@ -100,7 +100,7 @@ Abrir o ficheiro em RDONLY, copiar os dados. Adicionar os novos dados aos dados 
 
 ## a
 
-```
+```c
 int numbits = argv[1];
 
 execl("/home/sope/gen_bit", "/home/sope/gen_bit", NULL);
@@ -129,7 +129,7 @@ rand();
 
 ## d
 
-```
+```c
 // antes da declaração de main:
 int bit;
 
@@ -163,7 +163,7 @@ Thread1 (P1)                   Thread2 (P2)<br/>
 
 ## b
 
-```
+```c
 void * myThread(void * arg) {
     if (mkfifo("myreadfifo", 0666)) {
         perror("Error creating FIFO");
@@ -192,7 +192,7 @@ void * myThread(void * arg) {
 
 ## c
 
-``` 
+```c
 struct Data {
     pid_t pid;
     tid_t tid;
@@ -227,7 +227,7 @@ no b)
 
 ## a
 
-```
+```c
 int receiverArgs[10];
 tid_t receiverTids[10], callerTid;
 for (int i = 0; i < 10; i++) {
@@ -243,7 +243,7 @@ Usaria dois semáforos. Um semáforo na thread receiver e outro na thread caller
 
 ## c
 
-```
+```c
 // variaveis globais
 sem_t receiverSem, callerSem;
 int phoneNumber;
@@ -255,7 +255,7 @@ sem_init(callerSem, 0);
 
 ## d
 
-```
+```c
 while (numPhoneCalls < MAX_NUM_PHONE_CALLS) {
     // espera até que chegue uma chamada telefónica e "anota" o número de telefone
     int value = receiveCall();
