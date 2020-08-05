@@ -1,3 +1,4 @@
-[submodule "sope-proj"]
-	path = sope-proj
-	url = git@github.com:rafaavc/sope-proj
+
+[submodule "sope-project"]
+	path = sope-project
+	url = git@github.com:rafaavc/sope-project.git
